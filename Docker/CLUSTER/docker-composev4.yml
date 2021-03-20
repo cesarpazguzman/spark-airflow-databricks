@@ -1,0 +1,90 @@
+version: '2'
+
+services:
+  airflow-webserver:
+    image: airflow-container:latest
+    restart: always
+    environment:
+        - LOAD_EX=y
+        - EXECUTOR=Local
+    volumes:
+        - ../Airflow_dags/dags:/opt/airflow/dags #DAG folder
+        - ../Airflow_dags/spark/app:/usr/local/spark/app #Spark Scripts (Must be the same path in airflow and Spark Cluster)
+    ports:
+        - "8090:8080"
+    command: bash -c "airflow db init && airflow webserver"
+  hdfs:
+    image: hdfs-namenode:latest
+    container_name: hdfs
+    volumes:
+      - ./HDFS/data:/hadoop/data
+    environment:
+      - CLUSTER_NAME=test
+      - "HADOOP_CONF_DIR=/etc/hadoop"
+      - "USER=root"
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+  spark:
+    image: docker.io/bitnami/spark:3-debian-10
+    container_name: spark
+    depends_on:
+      - hdfs
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
+
+    volumes:
+      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+      - ../Airflow_dags/spark/resources:/usr/local/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
+    ports:
+      - '8080:8080'
+      - "7077:7077"
+  spark-worker-1:
+    image: docker.io/bitnami/spark:3-debian-10
+    container_name: spark-worker1
+    depends_on:
+      - spark
+    ports:
+      - "8081:8081"
+    environment:
+      - SPARK_MASTER=spark://spark:7077
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+      - ../Airflow_dags/spark/resources:/usr/local/spark/resources
+  spark-worker-2:
+    image: docker.io/bitnami/spark:3-debian-10
+    container_name: spark-worker2
+    depends_on:
+      - spark
+    ports:
+      - "8082:8081"
+    environment:
+      - SPARK_MASTER=spark://spark:7077
+      - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+      - ../Airflow_dags/spark/resources:/usr/local/spark/resources
+
