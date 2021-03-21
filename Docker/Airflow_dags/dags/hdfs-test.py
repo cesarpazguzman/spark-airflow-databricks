@@ -6,7 +6,6 @@ from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
 from datetime import datetime
 
 spark_master = "spark://spark:7077"
-spark_app_name = "Entrenamiento_modelos"
 file_path = "/usr/local/airflow/airflow.cfg"
 
 default_args = {'owner': 'airflow',
@@ -45,13 +44,22 @@ for file_name in file_names:
     asd.append(put_file_in_hdfs)
     
 
-    start >> sftp_file_to_container_hdfs >> put_file_in_hdfs 
+    start >> sftp_file_to_container_hdfs >> put_file_in_hdfs >> hito_files_hdfs
 
 
-spark_job = SparkSubmitOperator(
-    task_id="spark_job",
-    application="/usr/local/spark/app/hello-world.py", # Spark application path created in airflow and spark cluster
-    name=spark_app_name,
+entrenamiento_modelo = SparkSubmitOperator(
+    task_id="entrenamiento_modelo",
+    application="/usr/local/spark/app/construccion_modelo.py", # Spark application path created in airflow and spark cluster
+    name="entrenamiento_modelos",
+    conn_id="spark_default",
+    verbose=1,
+    application_args=[file_path],
+    dag=dag)
+
+evaluacion_modelo = SparkSubmitOperator(
+    task_id="evaluacion_modelo",
+    application="/usr/local/spark/app/evaluacion_modelos.py", # Spark application path created in airflow and spark cluster
+    name="evaluacion_modelos",
     conn_id="spark_default",
     verbose=1,
     application_args=[file_path],
@@ -59,7 +67,6 @@ spark_job = SparkSubmitOperator(
 
 end = DummyOperator(task_id="end", dag=dag)
 
-for i in asd:
-    hito_files_hdfs.set_upstream(i)
-spark_job.set_upstream(hito_files_hdfs)
-end.set_upstream(spark_job)
+entrenamiento_modelo.set_upstream(hito_files_hdfs)
+evaluacion_modelo.set_upstream(entrenamiento_modelo)
+end.set_upstream(evaluacion_modelo)

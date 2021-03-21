@@ -5,7 +5,8 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.functions import current_date
 from pyspark.sql.types import *
 from pyspark import SparkContext
-
+import pickle
+import pydoop.hdfs as hdfs
 
 
 
@@ -109,6 +110,11 @@ def forecast_store_item( history_pd ):
     include_history=True
     )
   forecast_pd = model.predict( future_pd )  
+
+  with hdfs.open("hdfs://hdfs:9000/", 'w') as f:
+    pickle.dump(model, f)
+
+
   # --------------------------------------
   
   # ASSEMBLE EXPECTED RESULT SET
@@ -131,7 +137,7 @@ def forecast_store_item( history_pd ):
   # return expected dataset
   return results_pd[ ['ds', 'store', 'item', 'y', 'yhat', 'yhat_upper', 'yhat_lower'] ]  
 
-  
+
 print("Se ejecuta la UDF por cada combinacion articulo-tienda")
 results = (
   store_item_history
@@ -141,7 +147,8 @@ results = (
     )
 
 print("El resultado de las predicciones se almacenan en una vista temporal")
-results.createOrReplaceTempView('new_forecasts')
 results.show()
+
+results.write.csv("hdfs://hdfs:9000/new_forecasts.csv")
 
 
