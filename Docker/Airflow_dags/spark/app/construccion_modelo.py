@@ -5,12 +5,8 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.functions import current_date
 from pyspark.sql.types import *
 from pyspark import SparkContext
+
 import pickle
-import pydoop.hdfs as hdfs
-
-
-
-
 
 
 appName = "Python Example - PySpark Read CSV"
@@ -111,8 +107,11 @@ def forecast_store_item( history_pd ):
     )
   forecast_pd = model.predict( future_pd )  
 
-  with hdfs.open("hdfs://hdfs:9000/", 'w') as f:
-    pickle.dump(model, f)
+  print("hdfs://hdfs:9000/modelo_entrenado_{0}_{1}.pickle".format(history_pd['store'].iloc[0],history_pd['item'].iloc[0]))
+
+
+  with open("/usr/local/spark/resources/modelos/modelo_entrenado_{0}_{1}.pickle".format(history_pd['store'].iloc[0],history_pd['item'].iloc[0]), "wb") as f:
+     pickle.dump(model, f)
 
 
   # --------------------------------------
@@ -147,8 +146,12 @@ results = (
     )
 
 print("El resultado de las predicciones se almacenan en una vista temporal")
+results.createOrReplaceTempView('new_forecasts')
 results.show()
+print("SE GUARDA EN HDFS EL NEW_FORECAST")
 
-results.write.csv("hdfs://hdfs:9000/new_forecasts.csv")
+df = spark.sql("SELECT * FROM new_forecasts")
+df.show()
+df.coalesce(1).write.mode("overwrite").format("parquet").save("hdfs://hdfs:9000/new_forecasts")
 
 

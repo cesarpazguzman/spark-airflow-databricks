@@ -16,3 +16,4 @@ RUN pip install fbprophet
 RUN pip install holidays
 RUN pip install pyspark
 RUN pip install PyArrow
+RUN pip install sklearn

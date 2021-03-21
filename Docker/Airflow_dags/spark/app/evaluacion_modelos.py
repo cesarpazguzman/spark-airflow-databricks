@@ -5,7 +5,10 @@ from pyspark.sql.functions import pandas_udf, PandasUDFType
 from pyspark.sql.functions import current_date
 from pyspark.sql.types import *
 from pyspark import SparkContext
-
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from math import sqrt
+from datetime import date
+import pandas as pd
 
 master = 'local'
 
@@ -27,9 +30,8 @@ new_forecasts_schema = StructType([
   ])
 
 print("Se lee el fichero de las predicciones, guardado en hdfs")
-new_forecasts = spark.read.csv(
-  'hdfs://hdfs:9000/new_forecasts.csv', 
-  header=True, 
+new_forecasts = spark.read.parquet(
+  'hdfs://hdfs:9000//new_forecasts.parquet/part-00000-47d51f88-79f3-462e-980f-05bda4d59040-c000.snappy.parquet', 
   schema=new_forecasts_schema
 )
 
@@ -56,6 +58,7 @@ def evaluate_forecast( evaluation_pd ):
   store = evaluation_pd['store'].iloc[0]
   item = evaluation_pd['item'].iloc[0]
   
+  print("Evaluacion_modelo_{0}_{1}".format(store,item))
   # calulate evaluation metrics
   mae = mean_absolute_error( evaluation_pd['y'], evaluation_pd['yhat'] )
   mse = mean_squared_error( evaluation_pd['y'], evaluation_pd['yhat'] )
@@ -78,6 +81,6 @@ results = (
 
 print("RESULTADOS")
 results.show()
-results.write.csv("hdfs://hdfs:9000/evaluacion_modelos.csv")
+results.repartition(1).write.parquet("hdfs://hdfs:9000/evaluacion_modelos")
 
 
