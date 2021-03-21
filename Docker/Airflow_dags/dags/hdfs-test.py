@@ -2,8 +2,12 @@ from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.contrib.operators.ssh_operator import SSHOperator
 from airflow.contrib.operators.sftp_operator import SFTPOperator
+from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
 from datetime import datetime
 
+spark_master = "spark://spark:7077"
+spark_app_name = "Entrenamiento_modelos"
+file_path = "/usr/local/airflow/airflow.cfg"
 
 default_args = {'owner': 'airflow',
                 'start_date': datetime(2020, 3, 19, 0, 0),
@@ -18,7 +22,8 @@ dag = DAG(
     schedule_interval=None)
 
 start = DummyOperator(task_id="start", provide_context=True, dag=dag)
-
+hito_files_hdfs = DummyOperator(task_id="hito_files_hdfs", dag=dag)
+asd = [] 
 for file_name in file_names:
     print("Filename: "+file_name)
     sftp_file_to_container_hdfs = SFTPOperator(
@@ -37,4 +42,24 @@ for file_name in file_names:
         dag=dag
     )
 
-    start >> sftp_file_to_container_hdfs >> put_file_in_hdfs
+    asd.append(put_file_in_hdfs)
+    
+
+    start >> sftp_file_to_container_hdfs >> put_file_in_hdfs 
+
+
+spark_job = SparkSubmitOperator(
+    task_id="spark_job",
+    application="/usr/local/spark/app/hello-world.py", # Spark application path created in airflow and spark cluster
+    name=spark_app_name,
+    conn_id="spark_default",
+    verbose=1,
+    application_args=[file_path],
+    dag=dag)
+
+end = DummyOperator(task_id="end", dag=dag)
+
+for i in asd:
+    hito_files_hdfs.set_upstream(i)
+spark_job.set_upstream(hito_files_hdfs)
+end.set_upstream(spark_job)
