@@ -96,12 +96,16 @@ RUN apt-get update && \
     java -version $$ \
     javac -version
 
+
+
 # Setup JAVA_HOME 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 RUN export JAVA_HOME
 ###############################
 ## Finish JAVA installation
 ###############################
+
+RUN apt-get install nano
 
 COPY entrypoint.sh /entrypoint.sh
 COPY config/airflow.cfg ${AIRFLOW_HOME}/airflow/airflow.cfg
@@ -134,10 +138,13 @@ RUN chmod +x entrypoint_mod.sh
 
 EXPOSE 8080 5555 8793
 
-RUN pip install apache-airflow-backport-providers-apache-hdfs
-RUN pip install hdfs
-
 USER airflow
 WORKDIR ${AIRFLOW_HOME}
+
+# passwordless ssh
+RUN mkdir -p ${AIRFLOW_HOME}/.ssh
+RUN ssh-keygen -q -N "" -t rsa -f ${AIRFLOW_HOME}/.ssh/id_rsa
+RUN cat ${AIRFLOW_HOME}/.ssh/id_rsa.pub >> ${AIRFLOW_HOME}/.ssh/authorized_keys
+
 ENTRYPOINT ["/entrypoint_mod.sh"]
 CMD ["webserver"] # set default arg for entrypoint

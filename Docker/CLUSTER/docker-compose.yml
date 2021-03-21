@@ -41,14 +41,13 @@ services:
       - CLUSTER_NAME=test
       - "HADOOP_CONF_DIR=/etc/hadoop"
       - "USER=root"
-      - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
     ports:
       - "9000:9000"
-      - "2222:22"
       - "9870:9870"
+      - "2222:22"
       
   spark:
-    image: docker.io/bitnami/spark:3-debian-10
+    image: spark-custom:latest
     container_name: spark
     depends_on:
       - hdfs
@@ -67,7 +66,7 @@ services:
       - '8080:8080'
       - "7077:7077"
   spark-worker-1:
-    image: docker.io/bitnami/spark:3-debian-10
+    image: spark-custom:latest
     container_name: spark-worker1
     depends_on:
       - spark
@@ -88,7 +87,7 @@ services:
       - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
       - ../Airflow_dags/spark/resources:/usr/local/spark/resources
   spark-worker-2:
-    image: docker.io/bitnami/spark:3-debian-10
+    image: spark-custom:latest
     container_name: spark-worker2
     depends_on:
       - spark
