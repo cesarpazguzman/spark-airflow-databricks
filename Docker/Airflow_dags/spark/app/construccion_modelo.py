@@ -110,8 +110,8 @@ def forecast_store_item( history_pd ):
   print("hdfs://hdfs:9000/modelo_entrenado_{0}_{1}.pickle".format(history_pd['store'].iloc[0],history_pd['item'].iloc[0]))
 
 
-  with open("/usr/local/spark/resources/modelos/modelo_entrenado_{0}_{1}.pickle".format(history_pd['store'].iloc[0],history_pd['item'].iloc[0]), "wb") as f:
-     pickle.dump(model, f)
+  #with open("/usr/local/spark/resources/modelos/modelo_entrenado_{0}_{1}.pickle".format(history_pd['store'].iloc[0],history_pd['item'].iloc[0]), "wb") as f:
+  #   pickle.dump(model, f)
 
 
   # --------------------------------------

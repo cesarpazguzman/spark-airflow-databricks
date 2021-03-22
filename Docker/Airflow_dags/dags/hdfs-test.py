@@ -12,7 +12,7 @@ default_args = {'owner': 'airflow',
                 'start_date': datetime(2020, 3, 19, 0, 0),
                 }
 
-dag_name = 'hdfs_transferv2'
+dag_name = 'dga_time_series'
 file_names = ['sample_submission', 'test', 'train']
 
 dag = DAG(
@@ -54,6 +54,7 @@ entrenamiento_modelo = SparkSubmitOperator(
     conn_id="spark_default",
     verbose=1,
     application_args=[file_path],
+    env_vars={'HADOOP_USER_NAME': 'root'},
     dag=dag)
 
 evaluacion_modelo = SparkSubmitOperator(
@@ -63,6 +64,7 @@ evaluacion_modelo = SparkSubmitOperator(
     conn_id="spark_default",
     verbose=1,
     application_args=[file_path],
+    env_vars={'HADOOP_USER_NAME': 'root'},
     dag=dag)
 
 end = DummyOperator(task_id="end", dag=dag)

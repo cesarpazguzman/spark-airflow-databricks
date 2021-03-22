@@ -31,7 +31,7 @@ new_forecasts_schema = StructType([
 
 print("Se lee el fichero de las predicciones, guardado en hdfs")
 new_forecasts = spark.read.parquet(
-  'hdfs://hdfs:9000//new_forecasts.parquet/part-00000-47d51f88-79f3-462e-980f-05bda4d59040-c000.snappy.parquet', 
+  'hdfs://hdfs:9000//new_forecasts/', 
   schema=new_forecasts_schema
 )
 
@@ -81,6 +81,6 @@ results = (
 
 print("RESULTADOS")
 results.show()
-results.repartition(1).write.parquet("hdfs://hdfs:9000/evaluacion_modelos")
+results.coalesce(1).write.mode("overwrite").parquet("hdfs://hdfs:9000/evaluacion_modelos")
 
 

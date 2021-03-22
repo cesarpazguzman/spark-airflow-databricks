@@ -146,5 +146,12 @@ RUN mkdir -p ${AIRFLOW_HOME}/.ssh
 RUN ssh-keygen -q -N "" -t rsa -f ${AIRFLOW_HOME}/.ssh/id_rsa
 RUN cat ${AIRFLOW_HOME}/.ssh/id_rsa.pub >> ${AIRFLOW_HOME}/.ssh/authorized_keys
 
+RUN pip install statsd
+RUN pip install fbprophet
+RUN pip install holidays
+RUN pip install pyspark
+RUN pip install PyArrow
+RUN pip install sklearn
+
 ENTRYPOINT ["/entrypoint_mod.sh"]
 CMD ["webserver"] # set default arg for entrypoint
