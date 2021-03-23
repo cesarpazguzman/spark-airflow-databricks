@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from math import sqrt
 from datetime import date
 import pandas as pd
+import mlflow
 
 master = 'local'
 
@@ -50,22 +51,33 @@ eval_schema =StructType([
   StructField('rmse', FloatType())
   ])
 
+mlflow.set_tracking_uri('http://mlflow:5000')
+mlflow.log_artifact('hdfs://hdfs:9000//new_forecasts/')
+
 @pandas_udf( eval_schema, PandasUDFType.GROUPED_MAP )
 def evaluate_forecast( evaluation_pd ):
-  
-  # get store & item in incoming data set
-  training_date = evaluation_pd['training_date'].iloc[0]
-  store = evaluation_pd['store'].iloc[0]
-  item = evaluation_pd['item'].iloc[0]
-  
-  print("Evaluacion_modelo_{0}_{1}".format(store,item))
-  # calulate evaluation metrics
-  mae = mean_absolute_error( evaluation_pd['y'], evaluation_pd['yhat'] )
-  mse = mean_squared_error( evaluation_pd['y'], evaluation_pd['yhat'] )
-  rmse = sqrt( mse )
-  
-  # assemble result set
-  results = {'training_date':[training_date], 'store':[store], 'item':[item], 'mae':[mae], 'mse':[mse], 'rmse':[rmse]}
+  with mlflow.start_run():
+      # get store & item in incoming data set
+      training_date = evaluation_pd['training_date'].iloc[0]
+      store = evaluation_pd['store'].iloc[0]
+      item = evaluation_pd['item'].iloc[0]
+      
+      print("Evaluacion_modelo_{0}_{1}".format(store,item))
+      # calulate evaluation metrics
+      mae = mean_absolute_error( evaluation_pd['y'], evaluation_pd['yhat'] )
+      mse = mean_squared_error( evaluation_pd['y'], evaluation_pd['yhat'] )
+      rmse = sqrt( mse )
+      
+      mlflow.log_metric('mae', mae)
+      mlflow.log_metric('mse', mse)
+      mlflow.log_metric('rmse', rmse)
+
+      mlflow.log_param('training_date', training_date)
+      mlflow.log_param('store', store)
+      mlflow.log_param('item', item)
+
+      # assemble result set
+      results = {'training_date':[training_date], 'store':[store], 'item':[item], 'mae':[mae], 'mse':[mse], 'rmse':[rmse]}
   return pd.DataFrame.from_dict( results )
 
 
