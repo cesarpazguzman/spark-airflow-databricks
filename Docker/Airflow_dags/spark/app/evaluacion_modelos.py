@@ -10,6 +10,9 @@ from math import sqrt
 from datetime import date
 import pandas as pd
 import mlflow
+from mlflow.tracking import MlflowClient
+
+mlflow.set_tracking_uri('http://mlflow_server:5000')
 
 master = 'local'
 
@@ -27,7 +30,13 @@ new_forecasts_schema = StructType([
   StructField('y',FloatType()),
   StructField('yhat',FloatType()),
   StructField('yhat_upper',FloatType()),
-  StructField('yhat_lower',FloatType())
+  StructField('yhat_lower',FloatType()),
+  StructField('interval_width',FloatType()),
+  StructField('growth',StringType()),
+  StructField('daily_seasonality',BooleanType()),
+  StructField('weekly_seasonality',BooleanType()),
+  StructField('seasonality_mode',StringType()),
+  StructField('yearly_seasonality',BooleanType()),
   ])
 
 print("Se lee el fichero de las predicciones, guardado en hdfs")
@@ -51,12 +60,16 @@ eval_schema =StructType([
   StructField('rmse', FloatType())
   ])
 
-mlflow.set_tracking_uri('http://mlflow:5000')
-mlflow.log_artifact('hdfs://hdfs:9000//new_forecasts/')
 
 @pandas_udf( eval_schema, PandasUDFType.GROUPED_MAP )
 def evaluate_forecast( evaluation_pd ):
-  with mlflow.start_run():
+  mlflow.set_tracking_uri('http://mlflow_server:5000')
+  try:
+    experiment_id = mlflow.create_experiment(name="ev_modelosv4", artifact_location='http://mlflow_server:5000/mlflow/')
+  except:
+    experiment_id = mlflow.get_experiment_by_name(name="ev_modelosv4").experiment_id  
+  with mlflow.start_run(experiment_id=experiment_id, run_name="store={0}_item{1}".format(evaluation_pd['store'].iloc[0],
+            evaluation_pd['item'].iloc[0])):
       # get store & item in incoming data set
       training_date = evaluation_pd['training_date'].iloc[0]
       store = evaluation_pd['store'].iloc[0]
@@ -72,12 +85,19 @@ def evaluate_forecast( evaluation_pd ):
       mlflow.log_metric('mse', mse)
       mlflow.log_metric('rmse', rmse)
 
-      mlflow.log_param('training_date', training_date)
       mlflow.log_param('store', store)
       mlflow.log_param('item', item)
+      mlflow.log_param('interval_width', evaluation_pd['interval_width'].iloc[0])
+      mlflow.log_param('growth', evaluation_pd['growth'].iloc[0])
+      mlflow.log_param('daily_seasonality', evaluation_pd['daily_seasonality'].iloc[0])
+      mlflow.log_param('weekly_seasonality', evaluation_pd['weekly_seasonality'].iloc[0])
+      mlflow.log_param('yearly_seasonality', evaluation_pd['yearly_seasonality'].iloc[0])
+      mlflow.log_param('seasonality_mode', evaluation_pd['seasonality_mode'].iloc[0])
 
       # assemble result set
       results = {'training_date':[training_date], 'store':[store], 'item':[item], 'mae':[mae], 'mse':[mse], 'rmse':[rmse]}
+  
+  mlflow.end_run()
   return pd.DataFrame.from_dict( results )
 
 
@@ -86,10 +106,12 @@ results = (
   spark
     .table('new_forecasts')
     .filter('ds < \'2018-01-01\'') # limit evaluation to periods where we have historical data
-    .select('training_date', 'store', 'item', 'y', 'yhat')
+    .select('training_date', 'store', 'item', 'y', 'yhat','interval_width','growth',
+      'daily_seasonality','weekly_seasonality','yearly_seasonality','seasonality_mode')
     .groupBy('training_date', 'store', 'item')
     .apply(evaluate_forecast)
     )
+
 
 print("RESULTADOS")
 results.show()

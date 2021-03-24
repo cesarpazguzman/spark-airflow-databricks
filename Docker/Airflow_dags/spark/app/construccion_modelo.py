@@ -71,7 +71,13 @@ result_schema =StructType([
   StructField('y',FloatType()),
   StructField('yhat',FloatType()),
   StructField('yhat_upper',FloatType()),
-  StructField('yhat_lower',FloatType())
+  StructField('yhat_lower',FloatType()),
+  StructField('interval_width',FloatType()),
+  StructField('growth',StringType()),
+  StructField('daily_seasonality',BooleanType()),
+  StructField('weekly_seasonality',BooleanType()),
+  StructField('seasonality_mode',StringType()),
+  StructField('yearly_seasonality',BooleanType()),
   ])
 
 
@@ -132,26 +138,34 @@ def forecast_store_item( history_pd ):
   results_pd['store'] = history_pd['store'].iloc[0]
   results_pd['item'] = history_pd['item'].iloc[0]
   # --------------------------------------
-  
+
+  results_pd['interval_width'] = 0.95
+  results_pd['growth'] = 'linear'
+  results_pd['daily_seasonality'] = False
+  results_pd['weekly_seasonality'] = True
+  results_pd['yearly_seasonality'] = True
+  results_pd['seasonality_mode'] = 'multiplicative'
+
   # return expected dataset
-  return results_pd[ ['ds', 'store', 'item', 'y', 'yhat', 'yhat_upper', 'yhat_lower'] ]  
+  return results_pd[ ['ds', 'store', 'item', 'y', 'yhat', 'yhat_upper', 'yhat_lower', 'interval_width','growth',
+    'daily_seasonality','weekly_seasonality','yearly_seasonality','seasonality_mode'] ]  
 
 
 print("Se ejecuta la UDF por cada combinacion articulo-tienda")
-results = (
-  store_item_history
-    .groupBy('store', 'item')
-    .apply(forecast_store_item)
-    .withColumn('training_date', current_date() )
-    )
+#results = (
+#  store_item_history
+#    .groupBy('store', 'item')
+#    .apply(forecast_store_item)
+#    .withColumn('training_date', current_date() )
+#    )
 
-print("El resultado de las predicciones se almacenan en una vista temporal")
-results.createOrReplaceTempView('new_forecasts')
-results.show()
-print("SE GUARDA EN HDFS EL NEW_FORECAST")
+#print("El resultado de las predicciones se almacenan en una vista temporal")
+#results.createOrReplaceTempView('new_forecasts')
+#results.show()
+#print("SE GUARDA EN HDFS EL NEW_FORECAST")
 
-df = spark.sql("SELECT * FROM new_forecasts")
-df.show()
-df.coalesce(1).write.mode("overwrite").format("parquet").save("hdfs://hdfs:9000/new_forecasts")
+#df = spark.sql("SELECT * FROM new_forecasts")
+#df.show()
+#df.coalesce(1).write.mode("overwrite").format("parquet").save("hdfs://hdfs:9000/new_forecasts")
 
 

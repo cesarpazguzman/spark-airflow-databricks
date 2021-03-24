@@ -22,7 +22,7 @@ dag = DAG(
 
 start = DummyOperator(task_id="start", provide_context=True, dag=dag)
 hito_files_hdfs = DummyOperator(task_id="hito_files_hdfs", dag=dag)
-asd = [] 
+
 for file_name in file_names:
     print("Filename: "+file_name)
     sftp_file_to_container_hdfs = SFTPOperator(
@@ -40,9 +40,6 @@ for file_name in file_names:
         command=" cd /hadoop/bin && ./hdfs dfs -test -e /{0}.csv; if [ `echo $?` -gt 0 ]; then ./hdfs dfs -put /hadoop/data/{0}.csv /; fi".format(file_name),
         dag=dag
     )
-
-    asd.append(put_file_in_hdfs)
-    
 
     start >> sftp_file_to_container_hdfs >> put_file_in_hdfs >> hito_files_hdfs
 
@@ -72,3 +69,4 @@ end = DummyOperator(task_id="end", dag=dag)
 entrenamiento_modelo.set_upstream(hito_files_hdfs)
 evaluacion_modelo.set_upstream(entrenamiento_modelo)
 end.set_upstream(evaluacion_modelo)
+evaluacion_modelo
