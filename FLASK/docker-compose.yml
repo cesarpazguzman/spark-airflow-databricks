@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  flask_container:
+    image: flask_container
+    volumes: 
+        - ./app.py:/app/app.py
+        - ../cluster\AIRFLOW\dags\spark\resources\modelos:/app/modelos
+    environment:
+        - FLASK_APP=app
+    command: python -m flask run --host=0.0.0.0 --port=1080
+    ports:
+        - "1080:1080"
