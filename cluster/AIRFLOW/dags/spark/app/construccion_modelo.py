@@ -9,14 +9,8 @@ from pyspark import SparkContext
 import pickle
 
 
-appName = "Python Example - PySpark Read CSV"
-master = 'local'
-
 # Create Spark session
-spark = SparkSession.builder \
-    .master(master) \
-    .appName(appName) \
-    .getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 
 print("Se declara el esquema")
 
@@ -151,7 +145,7 @@ def forecast_store_item( history_pd ):
     'daily_seasonality','weekly_seasonality','yearly_seasonality','seasonality_mode'] ]  
 
 
-print("Se ejecuta la UDF por cada combinacion articulo-tienda")
+#print("Se ejecuta la UDF por cada combinacion articulo-tienda")
 #results = (
 #  store_item_history
 #    .groupBy('store', 'item')

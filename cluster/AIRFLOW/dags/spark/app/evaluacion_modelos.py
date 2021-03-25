@@ -14,12 +14,8 @@ from mlflow.tracking import MlflowClient
 
 mlflow.set_tracking_uri('http://mlflow_server:5000')
 
-master = 'local'
-
 # Create Spark session
-spark = SparkSession.builder \
-    .master(master) \
-    .getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 
 print("Se declara el esquema")
 

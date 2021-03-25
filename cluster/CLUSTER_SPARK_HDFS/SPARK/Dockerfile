@@ -17,3 +17,4 @@ RUN pip install holidays
 RUN pip install pyspark
 RUN pip install PyArrow
 RUN pip install sklearn
+RUN pip install mlflow==1.14.0

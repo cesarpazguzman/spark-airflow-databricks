@@ -5,7 +5,7 @@ services:
     image: postgres:9.6
     volumes: 
         # Create Test database on Postgresql
-        - ./docker-airflow/pg-init-scripts:/docker-entrypoint-initdb.d
+        - ./AIRFLOW/Postgres_data/pg-init-scripts:/docker-entrypoint-initdb.d
     environment:
         - POSTGRES_USER=airflow
         - POSTGRES_PASSWORD=airflow
@@ -28,12 +28,10 @@ services:
         - AIRFLOW__SCHEDULER__STATSD_HOST=statsd-exporter
         - AIRFLOW__SCHEDULER__STATSD_PORT=8125
         - AIRFLOW__SCHEDULER__STATSD_PREFIX=airflow
-        - AIRFLOW__WEBSERVER__WORKERS=2
-        - AIRFLOW__WEBSERVER__WORKER_REFRESH_INTERVAL=1800
     volumes:
-        - ../Airflow_dags/dags:/usr/local/airflow/dags #DAG folder
-        - ../Airflow_dags/spark/app:/usr/local/spark/app
-        - ../Airflow_dags/spark/resources:/usr/local/spark/resources #Spark Scripts (Must be the same path in airflow and Spark Cluster)
+        - ./AIRFLOW/dags/dags:/usr/local/airflow/dags #DAG folder
+        - ./AIRFLOW/dags/spark/app:/usr/local/spark/app
+        - ./AIRFLOW/dags/spark/resources:/usr/local/spark/resources #Spark Scripts (Must be the same path in airflow and Spark Cluster)
     ports:
         - "8282:8282"
     command: webserver
@@ -46,7 +44,7 @@ services:
     image: hdfs-namenode:latest
     container_name: hdfs
     volumes:
-      - ./HDFS/data:/hadoop/data
+      - ./CLUSTER_SPARK_HDFS/HDFS/data:/hadoop/data
     environment:
       - CLUSTER_NAME=test
       - "HADOOP_CONF_DIR=/etc/hadoop"
@@ -69,9 +67,9 @@ services:
       - SPARK_SSL_ENABLED=no
       - CORE_CONF_fs_defaultFS=hdfs://hdfs:9000
     volumes:
-      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
-      - ../Airflow_dags/spark/resources:/usr/local/spark/resources #Resources folder (Must be the same path in airflow and Spark Cluster)
-      - ./SPARK/metrics.properties:/opt/bitnami/spark/conf/metrics.properties
+      - ./AIRFLOW/dags/spark/app:/usr/local/spark/app 
+      - ./AIRFLOW/dags/spark/resources:/usr/local/spark/resources
+      - ./CLUSTER_SPARK_HDFS/SPARK/metrics.properties:/opt/bitnami/spark/conf/metrics.properties
     ports:
       - '8080:8080'
       - "7077:7077"
@@ -94,8 +92,8 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     volumes:
-      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
-      - ../Airflow_dags/spark/resources:/usr/local/spark/resources
+      - ./AIRFLOW/dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+      - ./AIRFLOW/dags/spark/resources:/usr/local/spark/resources
   spark-worker-2:
     image: spark-custom:latest
     container_name: spark-worker2
@@ -115,8 +113,8 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     volumes:
-      - ../Airflow_dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
-      - ../Airflow_dags/spark/resources:/usr/local/spark/resources
+      - ./AIRFLOW/dags/spark/app:/usr/local/spark/app # Spark scripts folder (Must be the same path in airflow and Spark Cluster)
+      - ./AIRFLOW/dags/spark/resources:/usr/local/spark/resources
   statsd-exporter:
     image: prom/statsd-exporter:latest
     container_name: airflow-statsd-exporter
@@ -131,8 +129,8 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - ../MONITORIZACION/PROMETHEUS/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ../MONITORIZACION/PROMETHEUS/volume:/prometheus
+      - ./PROMETHEUS/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./PROMETHEUS/volume:/prometheus
   grafana:
     image: grafana/grafana:latest
     container_name: airflow-grafana
@@ -143,14 +141,14 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./grafana/volume/data:/grafana
-      - ./grafana/volume/datasources:/grafana/datasources
-      - ./grafana/volume/dashboards:/grafana/dashboards
-      - ./grafana/volume/provisioning:/grafana/provisioning
+      - ./GRAFANA/volume/data:/grafana
+      - ./GRAFANA/volume/datasources:/grafana/datasources
+      - ./GRAFANA/volume/dashboards:/grafana/dashboards
+      - ./GRAFANA/volume/provisioning:/grafana/provisioning
   mlflow_server:
     image: mlflow_tracking_server:latest
     container_name: mlflow_server
     ports:
       - 5000:5000
     volumes:
-      - ../MLFLOW_TRACKING_SERVER/mlruns:/mlflow/
+      - ./MLFLOW_TRACKING_SERVER/mlruns:/mlflow/
