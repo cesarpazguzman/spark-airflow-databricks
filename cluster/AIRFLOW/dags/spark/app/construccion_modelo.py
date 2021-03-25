@@ -145,21 +145,21 @@ def forecast_store_item( history_pd ):
     'daily_seasonality','weekly_seasonality','yearly_seasonality','seasonality_mode'] ]  
 
 
-#print("Se ejecuta la UDF por cada combinacion articulo-tienda")
-#results = (
-#  store_item_history
-#    .groupBy('store', 'item')
-#    .apply(forecast_store_item)
-#    .withColumn('training_date', current_date() )
-#    )
+print("Se ejecuta la UDF por cada combinacion articulo-tienda")
+results = (
+  store_item_history
+    .groupBy('store', 'item')
+    .apply(forecast_store_item)
+    .withColumn('training_date', current_date() )
+    )
 
-#print("El resultado de las predicciones se almacenan en una vista temporal")
-#results.createOrReplaceTempView('new_forecasts')
-#results.show()
-#print("SE GUARDA EN HDFS EL NEW_FORECAST")
+print("El resultado de las predicciones se almacenan en una vista temporal")
+results.createOrReplaceTempView('new_forecasts')
+results.show()
+print("SE GUARDA EN HDFS EL NEW_FORECAST")
 
-#df = spark.sql("SELECT * FROM new_forecasts")
-#df.show()
-#df.coalesce(1).write.mode("overwrite").format("parquet").save("hdfs://hdfs:9000/new_forecasts")
+df = spark.sql("SELECT * FROM new_forecasts")
+df.show()
+df.coalesce(1).write.mode("overwrite").format("parquet").save("hdfs://hdfs:9000/new_forecasts")
 
 
